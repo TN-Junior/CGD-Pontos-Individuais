@@ -598,40 +598,46 @@ def api_get_mensagens():
 @app.route('/progressoes', methods=['GET', 'POST'])
 @login_required
 def progressoes():
-    # Obtém todos os usuários (excluindo administradores) para a seleção
     usuarios = Usuario.query.filter(Usuario.role != 'admin').all()
-
-    # Identifica o usuário selecionado ou usa o logado por padrão
     usuario_id = int(request.form.get('usuario') or session.get('usuario_logado'))
-    
-    # Calcula pontos e progressoes para o usuário selecionado
     progressoes = calcular_pontos_cursos_aprovados(usuario_id)
-    
-    # Inicializa `errors` como um dicionário vazio para evitar erros no template
     errors = {}
 
+    # Definindo as qualificações com restrição de pontuação
+    qualificacoes_restritas = [
+        'Instrutoria ou Coordenação de cursos promovidos pelo Município do Recife.',
+        'Participação em grupos, equipes, comissões e projetos especiais, no âmbito do Município do Recife, formalizados por ato oficial.',
+        'Exercício de cargos comissionados e funções gratificadas, ocupados, exclusivamente, no âmbito do Poder Executivo Municipal.'
+    ]
+
+    # Calculando pontos totais nessas qualificações restritas
+    pontos_restritos_esgotados = all(
+        progressoes[qual]['progressao'] >= MAX_PONTOS_PERIODO[qual] for qual in qualificacoes_restritas
+    )
+
     if request.method == 'POST':
-        # Itera sobre as qualificações e verifica os botões de adição de pontos
         for i, (qualificacao, dados) in enumerate(progressoes.items()):
             adicionar_key = f'adicionar_{i + 1}'
             botao_adicionar_key = f'botao_adicionar_{i + 1}'
 
             if botao_adicionar_key in request.form:
                 try:
-                    # Recebe a quantidade de pontos a ser adicionada na progressão
                     progressao_valor = int(request.form.get(adicionar_key, '0'))
                 except ValueError:
                     progressao_valor = 0
 
-                # Verifica se a adição de pontos excede o máximo permitido
                 max_pontos = MAX_PONTOS_PERIODO.get(qualificacao, float('inf'))
                 pontos_disponiveis = max_pontos - progressoes[qualificacao]['progressao']
+
+                # Impedir adição de pontos em outras qualificações se as restritas não estiverem esgotadas
+                if qualificacao not in qualificacoes_restritas and not pontos_restritos_esgotados:
+                    flash(f"Erro: Não é possível adicionar pontos a '{qualificacao}' enquanto as qualificações restritas não atingirem o limite.", "danger")
+                    continue
 
                 if progressao_valor > pontos_disponiveis:
                     flash(f"Erro: Limite de pontos para {qualificacao} foi alcançado. Máximo permitido: {max_pontos} pontos.", "danger")
                     continue
 
-                # Consulta os certificados aprovados para o usuário e qualificação
                 certificados_aprovados_qualificacao = Certificado.query.filter_by(
                     usuario_id=usuario_id,
                     aprovado=True,
@@ -639,8 +645,6 @@ def progressoes():
                 ).all()
 
                 pontos_adicionados = 0
-
-                # Atualiza cada certificado com a progressão acumulada
                 for certificado in certificados_aprovados_qualificacao:
                     if progressao_valor > 0 and certificado.pontos > 0:
                         restante = min(progressao_valor, certificado.pontos)
@@ -650,33 +654,25 @@ def progressoes():
                         progressoes[qualificacao]['progressao'] += restante
                         progressao_valor -= restante
                         pontos_adicionados += restante
-                        db.session.add(certificado)  # Adiciona o certificado modificado à sessão
+                        db.session.add(certificado)
 
-                # Confirma as alterações no banco de dados
                 db.session.commit()
 
-                # Depuração: imprime os valores atualizados de progressoes
-                print(f"Após adição, progressoes para {qualificacao}: {progressoes[qualificacao]}")
-
-                # Mensagem de feedback para o usuário
                 if pontos_adicionados > 0:
                     flash(f"Pontos da qualificação '{qualificacao}' atualizados com sucesso!", "success")
                 else:
                     flash(f"Erro ao atualizar pontos para a qualificação '{qualificacao}'.", "danger")
 
-        # Recalcula os pontos e progressoes para refletir alterações
         progressoes = calcular_pontos_cursos_aprovados(usuario_id)
-        print(progressoes)
-        print(f"Valores de progressoes recalculados: {progressoes}")  # Depuração
 
-    # Renderiza o template passando `progressoes`, `usuarios`, `errors` e `usuario_selecionado`
     return render_template(
         'progressoes.html', 
         progressoes=progressoes, 
         usuarios=usuarios,  
         usuario_selecionado=usuario_id,
-        errors=errors  
+        errors=errors
     )
+
 
 
 
