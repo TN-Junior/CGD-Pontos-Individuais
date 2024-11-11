@@ -9,6 +9,7 @@
     <div class="form-group">
         {{ form.qualificacao.label(class="form-label") }}
         {{ form.qualificacao(class="form-control", id="qualificacao") }}
+        <small class="form-text text-muted">Selecione a qualificação correspondente para o certificado.</small>
     </div>
     <div id="next-fields" style="display: none;">
         <div id="field-periodo-de-ate" class="form-group" style="display: none;">
@@ -17,26 +18,37 @@
                 <input type="date" id="periodo-de" name="periodo_de" class="form-control">
                 <input type="date" id="periodo-ate" name="periodo_ate" class="form-control">
             </div>
+            <small class="form-text text-muted">Selecione o período correspondente ao certificado.</small>
         </div>
         <div id="field-horas" class="form-group" style="display: none;">
             {{ form.horas.label(class="form-label") }}
             {{ form.horas(class="form-control") }}
+            <small class="form-text text-muted">Informe a quantidade de horas para esta qualificação.</small>
         </div>
         <div id="field-ano_conclusao" class="form-group" style="display: none;">
             {{ form.ano_conclusao.label(class="form-label") }}
             {{ form.ano_conclusao(class="form-control") }}
+            <small class="form-text text-muted">Ano em que a qualificação foi concluída.</small>
         </div>
         <div id="field-ato_normativo" class="form-group" style="display: none;">
             {{ form.ato_normativo.label(class="form-label") }}
             {{ form.ato_normativo(class="form-control") }}
+            <small class="form-text text-muted">Informe o ato normativo correspondente.</small>
         </div>
         <div id="field-tempo" class="form-group" style="display: none;">
             {{ form.tempo.label(class="form-label") }}
             {{ form.tempo(class="form-control") }}
+            <small class="form-text text-muted">Informe o tempo de experiência em anos ou meses.</small>
         </div>
         <div id="field-certificate" class="form-group">
             {{ form.certificate.label(class="form-label") }}
             {{ form.certificate(class="form-control") }}
+            <small class="form-text text-muted">Faça o upload do certificado em formato PDF.</small>
+        </div>
+        <div class="form-group">
+            {{ form.descricao.label(class="form-label") }}
+            {{ form.descricao(class="form-control") }}
+            <small class="form-text text-muted">Forneça uma descrição adicional sobre a qualificação, se necessário.</small>
         </div>
         <div class="form-group">
             {{ form.submit(class="btn btn-primary") }}
