@@ -1,10 +1,12 @@
 from app import app, db
 from flask import render_template, redirect, url_for, flash, session, request, jsonify
 from models import Usuario, Certificado, Message
-from utils import requires_admin, login_required, calcular_pontos, generate_protocol
+from utils import requires_admin, login_required, calcular_pontos, generate_protocol, verify_password
 from forms import UploadForm
 import os
 from werkzeug.utils import secure_filename
+
+
 
 
 # Rotas

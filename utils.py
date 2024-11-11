@@ -5,6 +5,7 @@ from models import Usuario, Certificado
 from datetime import datetime
 import pyscrypt, os
 
+
 # Funções utilitárias
 def requires_admin(f):
     @wraps(f)
