@@ -4,6 +4,8 @@ from app import db
 from models import Usuario, Certificado
 from datetime import datetime
 import pyscrypt, os
+from config import QUALIFICACOES, MAX_PONTOS_PERIODO
+
 
 # Funções utilitárias
 def requires_admin(f):

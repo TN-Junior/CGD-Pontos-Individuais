@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import SelectField, DateField, IntegerField, FileField, SubmitField, StringField
+from wtforms import SelectField, DateField, IntegerField, FileField, SubmitField, StringField, TextAreaField
 from wtforms.validators import DataRequired, Optional
 from config import QUALIFICACOES
 
@@ -18,6 +18,7 @@ class UploadForm(FlaskForm):
     ato_normativo = StringField('Ato Normativo', validators=[Optional()])
     tempo = IntegerField('Tempo (anos/meses)', validators=[Optional()])
     certificate = FileField('Certificado', validators=[DataRequired(message="Certificado é obrigatório.")])
+    descricao = TextAreaField('Descrição', validators=[Optional()])  # Certifique-se de que este campo foi adicionado
     submit = SubmitField('Enviar')
 
     def validate(self, **kwargs):

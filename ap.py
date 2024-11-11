@@ -1,3 +1,4 @@
+'''
 from flask import Flask, render_template, request, redirect, session, flash, url_for, send_from_directory, jsonify
 from werkzeug.utils import secure_filename
 import os
@@ -695,3 +696,4 @@ if __name__ == '__main__':
                 db.session.add(curso)
         db.session.commit()
     app.run(host='0.0.0.0', port=5000, debug=True)
+    '''

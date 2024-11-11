@@ -28,3 +28,10 @@ QUALIFICACOES = [
     "Participação em grupos, equipes, comissões e projetos especiais, no âmbito do Município do Recife, formalizados por ato oficial.",
     "Exercício de cargos comissionados e funções gratificadas, ocupados, exclusivamente, no âmbito do Poder Executivo Municipal."
 ]
+
+# Constantes de limite de pontuação máxima
+MAX_PONTOS_PERIODO = {
+    'Instrutoria ou Coordenação de cursos promovidos pelo Município do Recife.': 10,
+    'Participação em grupos, equipes, comissões e projetos especiais, no âmbito do Município do Recife, formalizados por ato oficial.': 10,
+    'Exercício de cargos comissionados e funções gratificadas, ocupados, exclusivamente, no âmbito do Poder Executivo Municipal.': 15,
+}
