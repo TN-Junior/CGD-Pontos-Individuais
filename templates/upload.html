@@ -4,7 +4,7 @@
 
 {% block content %}
 <h2>Upload Certificate</h2>
-<form method="POST" enctype="multipart/form-data">
+<form method="POST" enctype="multipart/form-data" onsubmit="return validateDates()">
     {{ form.hidden_tag() }}
     <div class="form-group">
         {{ form.qualificacao.label(class="form-label") }}
@@ -119,6 +119,17 @@ function hideAllFields() {
     document.getElementById('field-ato_normativo').style.display = 'none';
     document.getElementById('field-tempo').style.display = 'none';
     document.getElementById('field-certificate').style.display = 'none';
+}
+
+function validateDates() {
+    const periodoDe = document.getElementById('periodo-de').value;
+    const periodoAte = document.getElementById('periodo-ate').value;
+
+    if (periodoDe && periodoAte && new Date(periodoAte) < new Date(periodoDe)) {
+        alert("A data de 'Período (até)' não pode ser menor do que a data de 'Período (de)'.");
+        return false;
+    }
+    return true;
 }
 </script>
 {% endblock %}

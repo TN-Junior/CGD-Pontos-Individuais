@@ -1,9 +1,9 @@
 from flask_wtf import FlaskForm
 from wtforms import SelectField, DateField, IntegerField, FileField, SubmitField, StringField, TextAreaField
-from wtforms.validators import DataRequired, Optional
+from wtforms.validators import DataRequired, Optional, ValidationError
+from flask import flash
 from config import QUALIFICACOES
 
-# Formulários
 class UploadForm(FlaskForm):
     qualificacao = SelectField(
         'Qualificação',
@@ -18,7 +18,7 @@ class UploadForm(FlaskForm):
     ato_normativo = StringField('Ato Normativo', validators=[Optional()])
     tempo = IntegerField('Tempo (anos/meses)', validators=[Optional()])
     certificate = FileField('Certificado', validators=[DataRequired(message="Certificado é obrigatório.")])
-    descricao = TextAreaField('Descrição', validators=[Optional()])  # Certifique-se de que este campo foi adicionado
+    descricao = TextAreaField('Descrição', validators=[Optional()]) 
     submit = SubmitField('Enviar')
 
     def validate(self, **kwargs):
@@ -36,5 +36,10 @@ class UploadForm(FlaskForm):
         if self.qualificacao.data in qualificacoes_com_horas and not self.horas.data:
             self.horas.errors.append("Este campo é obrigatório para a qualificação selecionada.")
             return False
+
+        if self.periodo_de.data and self.periodo_ate.data:
+            if self.periodo_ate.data < self.periodo_de.data:
+                flash("A data de 'Período (até)' não pode ser menor do que a data de 'Período (de)'.", "warning")
+                return False
 
         return True
