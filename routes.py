@@ -1,7 +1,7 @@
 from app import app, db
 from flask import render_template, redirect, url_for, flash, session, request, jsonify
 from models import Usuario, Certificado, Message
-from utils import requires_admin, login_required, calcular_pontos, generate_protocol, verify_password, calcular_pontos_cursos_aprovados
+from utils import requires_admin, login_required, calcular_pontos, generate_protocol, verify_password, calcular_pontos_cursos_aprovados, hash_password, MAX_PONTOS_PERIODO, send_from_directory
 from forms import UploadForm
 import os
 from werkzeug.utils import secure_filename
