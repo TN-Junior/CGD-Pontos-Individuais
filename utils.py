@@ -6,7 +6,6 @@ from datetime import datetime
 import pyscrypt, os
 from config import QUALIFICACOES, MAX_PONTOS_PERIODO
 
-
 # Funções utilitárias
 def requires_admin(f):
     @wraps(f)
@@ -85,12 +84,13 @@ def calcular_pontos(certificado_data):
 
     return pontos, horas_excedentes
 
-
 def calcular_pontos_cursos_aprovados(usuario_id):
+    """
+    Calcula os pontos acumulados para cada qualificação do usuário e considera as horas excedentes.
+    """
     certificados_aprovados = Certificado.query.filter_by(usuario_id=usuario_id, aprovado=True).all()
     progressoes = {qualificacao: {'pontos': 0, 'progressao': 0, 'horas_excedentes': 0} for qualificacao in QUALIFICACOES}
 
-    # Primeiro, somamos todas as horas e progressoes por qualificação
     horas_acumuladas = {}
     for certificado in certificados_aprovados:
         qualificacao = certificado.qualificacao
@@ -98,43 +98,34 @@ def calcular_pontos_cursos_aprovados(usuario_id):
             horas_acumuladas[qualificacao] = {'total_horas_excedentes': 0, 'certificados': []}
         horas_acumuladas[qualificacao]['total_horas_excedentes'] += certificado.horas_excedentes
         horas_acumuladas[qualificacao]['certificados'].append(certificado)
-        
-        # Adiciona a progressão acumulada do certificado diretamente
-        progressoes[qualificacao]['progressao'] += certificado.progressao
 
-    # Agora aplicamos a conversão de horas acumuladas por qualificação para pontos adicionais
+        progressoes[qualificacao]['progressao'] += certificado.progressao
+        progressoes[qualificacao]['pontos'] += certificado.pontos  # Não recalcular pontos já existentes
+
     for qualificacao, dados in horas_acumuladas.items():
         total_horas_excedentes = dados['total_horas_excedentes']
-        certificados = dados['certificados']
         pontos_adicionais = 0
 
+        # Adiciona pontos adicionais com base nas horas acumuladas
         if qualificacao == 'Cursos, seminários, congressos e oficinas realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
-            pontos_adicionais = (total_horas_excedentes // 20) * 2
-            total_horas_excedentes %= 20
-        elif qualificacao == 'Instrutoria ou Coordenação de cursos promovidos pelo Município do Recife.':
-            max_pontos = MAX_PONTOS_PERIODO.get(qualificacao, 10)
-            pontos_adicionais = (total_horas_excedentes // 8) * 2
-            if pontos_adicionais > max_pontos:
-                pontos_adicionais = max_pontos
-            total_horas_excedentes %= 8
+            if total_horas_excedentes >= 20:
+                pontos_adicionais = (total_horas_excedentes // 20) * 2
+                total_horas_excedentes %= 20
 
-        # Atualiza pontos e horas nos certificados até o total
+        certificados = dados['certificados']
+
         for certificado in certificados:
+            # Adiciona pontos adicionais ao certificado
             if pontos_adicionais > 0:
                 certificado.pontos += pontos_adicionais
-                pontos_adicionais = 0  # Define a zero para não duplicar pontos nos demais certificados
+                pontos_adicionais = 0  # Garante que não duplicamos os pontos
             certificado.horas_excedentes = total_horas_excedentes
             db.session.add(certificado)
 
-        # Atualiza os pontos totais para a qualificação
-        progressoes[qualificacao]['pontos'] += sum(cert.pontos for cert in certificados)
-        progressoes[qualificacao]['horas_excedentes'] += total_horas_excedentes
+        progressoes[qualificacao]['horas_excedentes'] = total_horas_excedentes
 
-    # Salva todas as alterações
     db.session.commit()
     return progressoes
-
-
 
 def hash_password(password):
     salt = os.urandom(16)
