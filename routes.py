@@ -313,21 +313,30 @@ def progressoes():
                 try:
                     progressao_valor = int(request.form.get(adicionar_key, '0'))
                 except ValueError:
-                    progressao_valor = 0
-
-                max_pontos = MAX_PONTOS_PERIODO.get(qualificacao, float('inf'))
-                pontos_disponiveis = max_pontos - progressoes[qualificacao]['progressao']
-
-                if progressao_valor > pontos_disponiveis:
-                    flash(f"Erro: Limite de pontos para {qualificacao} alcançado.", "danger")
+                    flash("Valor inválido para progressão.", "danger")
                     continue
 
+                # Verifica se o valor da progressão é maior que 0 antes de continuar
+                if progressao_valor <= 0:
+                    flash(f"Erro: Valor de progressão deve ser maior que 0 para '{qualificacao}'.", "danger")
+                    continue
+
+                pontos_disponiveis = progressoes[qualificacao]['pontos']
+
+                if progressao_valor > pontos_disponiveis:
+                    flash(f"Erro: Você tentou usar mais pontos do que estão disponíveis para '{qualificacao}'.", "danger")
+                    continue
+
+                # Atualizar os certificados aprovados
                 certificados_aprovados_qualificacao = Certificado.query.filter_by(
                     usuario_id=usuario_id, aprovado=True, qualificacao=qualificacao
                 ).all()
 
                 for certificado in certificados_aprovados_qualificacao:
-                    if progressao_valor > 0 and certificado.pontos > 0:
+                    if progressao_valor <= 0:
+                        break
+
+                    if certificado.pontos > 0:
                         restante = min(progressao_valor, certificado.pontos)
                         certificado.progressao += restante
                         certificado.pontos -= restante
@@ -337,8 +346,15 @@ def progressoes():
                         db.session.add(certificado)
 
                 db.session.commit()
-                flash(f"Pontos da qualificação '{qualificacao}' atualizados!", "success")
+                flash(f"Pontos da qualificação '{qualificacao}' atualizados com sucesso!", "success")
 
-        progressoes = calcular_pontos_cursos_aprovados(usuario_id)
+    # Sempre recalcule o progresso atualizado
+    progressoes = calcular_pontos_cursos_aprovados(usuario_id)
 
-    return render_template('progressoes.html', progressoes=progressoes, usuarios=usuarios, usuario_selecionado=usuario_id, errors=errors)
+    return render_template(
+        'progressoes.html',
+        progressoes=progressoes,
+        usuarios=usuarios,
+        usuario_selecionado=usuario_id,
+        errors=errors
+    )

@@ -85,47 +85,40 @@ def calcular_pontos(certificado_data):
     return pontos, horas_excedentes
 
 def calcular_pontos_cursos_aprovados(usuario_id):
-    """
-    Calcula os pontos acumulados para cada qualificação do usuário e considera as horas excedentes.
-    """
     certificados_aprovados = Certificado.query.filter_by(usuario_id=usuario_id, aprovado=True).all()
     progressoes = {qualificacao: {'pontos': 0, 'progressao': 0, 'horas_excedentes': 0} for qualificacao in QUALIFICACOES}
 
-    horas_acumuladas = {}
     for certificado in certificados_aprovados:
         qualificacao = certificado.qualificacao
-        if qualificacao not in horas_acumuladas:
-            horas_acumuladas[qualificacao] = {'total_horas_excedentes': 0, 'certificados': []}
-        horas_acumuladas[qualificacao]['total_horas_excedentes'] += certificado.horas_excedentes
-        horas_acumuladas[qualificacao]['certificados'].append(certificado)
 
         progressoes[qualificacao]['progressao'] += certificado.progressao
-        progressoes[qualificacao]['pontos'] += certificado.pontos  # Não recalcular pontos já existentes
+        progressoes[qualificacao]['pontos'] += certificado.pontos
+        progressoes[qualificacao]['horas_excedentes'] += certificado.horas_excedentes
 
-    for qualificacao, dados in horas_acumuladas.items():
-        total_horas_excedentes = dados['total_horas_excedentes']
-        pontos_adicionais = 0
-
-        # Adiciona pontos adicionais com base nas horas acumuladas
+        # Calcular pontos adicionais a partir das horas excedentes
         if qualificacao == 'Cursos, seminários, congressos e oficinas realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
-            if total_horas_excedentes >= 20:
-                pontos_adicionais = (total_horas_excedentes // 20) * 2
-                total_horas_excedentes %= 20
+            while progressoes[qualificacao]['horas_excedentes'] >= 20:
+                progressoes[qualificacao]['horas_excedentes'] -= 20
+                progressoes[qualificacao]['pontos'] += 2
+        elif qualificacao == 'Cursos de atualização realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
+            if progressoes[qualificacao]['horas_excedentes'] >= 40:
+                progressoes[qualificacao]['horas_excedentes'] -= 40
+                progressoes[qualificacao]['pontos'] += 5
+        elif qualificacao == 'Cursos de aperfeiçoamento realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
+            if progressoes[qualificacao]['horas_excedentes'] >= 180:
+                progressoes[qualificacao]['horas_excedentes'] -= 180
+                progressoes[qualificacao]['pontos'] += 10
+        elif qualificacao == 'Cursos de graduação e especialização realizados em instituição pública ou privada, reconhecida pelo MEC.':
+            if progressoes[qualificacao]['horas_excedentes'] >= 360:
+                progressoes[qualificacao]['horas_excedentes'] -= 360
+                progressoes[qualificacao]['pontos'] += 20
+        elif qualificacao == 'Instrutoria ou Coordenação de cursos promovidos pelo Município do Recife.':
+            while progressoes[qualificacao]['horas_excedentes'] >= 8:
+                progressoes[qualificacao]['horas_excedentes'] -= 8
+                progressoes[qualificacao]['pontos'] += 2
 
-        certificados = dados['certificados']
-
-        for certificado in certificados:
-            # Adiciona pontos adicionais ao certificado
-            if pontos_adicionais > 0:
-                certificado.pontos += pontos_adicionais
-                pontos_adicionais = 0  # Garante que não duplicamos os pontos
-            certificado.horas_excedentes = total_horas_excedentes
-            db.session.add(certificado)
-
-        progressoes[qualificacao]['horas_excedentes'] = total_horas_excedentes
-
-    db.session.commit()
     return progressoes
+
 
 def hash_password(password):
     salt = os.urandom(16)
