@@ -91,33 +91,45 @@ def calcular_pontos_cursos_aprovados(usuario_id):
     for certificado in certificados_aprovados:
         qualificacao = certificado.qualificacao
 
+        # Soma os valores do certificado na qualificação correspondente
         progressoes[qualificacao]['progressao'] += certificado.progressao
         progressoes[qualificacao]['pontos'] += certificado.pontos
         progressoes[qualificacao]['horas_excedentes'] += certificado.horas_excedentes
 
-        # Calcular pontos adicionais a partir das horas excedentes
+    # Processa cada qualificação para calcular os pontos adicionais
+    for qualificacao, dados in progressoes.items():
+        horas_excedentes = dados['horas_excedentes']
+
         if qualificacao == 'Cursos, seminários, congressos e oficinas realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
-            while progressoes[qualificacao]['horas_excedentes'] >= 20:
-                progressoes[qualificacao]['horas_excedentes'] -= 20
-                progressoes[qualificacao]['pontos'] += 2
+            while horas_excedentes >= 20:
+                horas_excedentes -= 20
+                dados['pontos'] += 2
+
         elif qualificacao == 'Cursos de atualização realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
-            if progressoes[qualificacao]['horas_excedentes'] >= 40:
-                progressoes[qualificacao]['horas_excedentes'] -= 40
-                progressoes[qualificacao]['pontos'] += 5
+            while horas_excedentes >= 40:
+                horas_excedentes -= 40
+                dados['pontos'] += 5
+
         elif qualificacao == 'Cursos de aperfeiçoamento realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
-            if progressoes[qualificacao]['horas_excedentes'] >= 180:
-                progressoes[qualificacao]['horas_excedentes'] -= 180
-                progressoes[qualificacao]['pontos'] += 10
+            while horas_excedentes >= 180:
+                horas_excedentes -= 180
+                dados['pontos'] += 10
+
         elif qualificacao == 'Cursos de graduação e especialização realizados em instituição pública ou privada, reconhecida pelo MEC.':
-            if progressoes[qualificacao]['horas_excedentes'] >= 360:
-                progressoes[qualificacao]['horas_excedentes'] -= 360
-                progressoes[qualificacao]['pontos'] += 20
+            while horas_excedentes >= 360:
+                horas_excedentes -= 360
+                dados['pontos'] += 20
+
         elif qualificacao == 'Instrutoria ou Coordenação de cursos promovidos pelo Município do Recife.':
-            while progressoes[qualificacao]['horas_excedentes'] >= 8:
-                progressoes[qualificacao]['horas_excedentes'] -= 8
-                progressoes[qualificacao]['pontos'] += 2
+            while horas_excedentes >= 8:
+                horas_excedentes -= 8
+                dados['pontos'] += 2
+
+        # Atualiza as horas excedentes restantes
+        dados['horas_excedentes'] = horas_excedentes
 
     return progressoes
+
 
 
 def hash_password(password):
