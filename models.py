@@ -29,6 +29,7 @@ class Certificado(db.Model):
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
     usuario = db.relationship('Usuario', backref=db.backref('certificados', lazy=True))
     progressao = db.Column(db.Integer, default=0)
+    progressao_aplicada = db.Column(db.Boolean, default=False)
 
 class Usuario(db.Model):
     __tablename__ = 'usuarios'
