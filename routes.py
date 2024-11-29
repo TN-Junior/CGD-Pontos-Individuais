@@ -1,7 +1,7 @@
 from app import app, db
 from flask import render_template, redirect, url_for, flash, session, request, jsonify, send_from_directory
 from models import Usuario, Certificado, Message
-from utils import requires_admin, login_required, calcular_pontos, generate_protocol, verify_password, calcular_pontos_cursos_aprovados, hash_password, MAX_PONTOS_PERIODO
+from utils import requires_admin, login_required, calcular_pontos_total, generate_protocol, verify_password, hash_password, MAX_PONTOS_PERIODO
 from forms import UploadForm
 import os
 from werkzeug.utils import secure_filename
@@ -50,6 +50,7 @@ def upload():
         periodo_de = form.periodo_de.data
         periodo_ate = form.periodo_ate.data
 
+        # Dados do certificado enviado
         certificado_data = {
             'qualificacao': form.qualificacao.data,
             'horas': form.horas.data,
@@ -58,21 +59,13 @@ def upload():
             'ato_normativo': form.ato_normativo.data,
             'tempo': form.tempo.data,
         }
-        pontos, horas_excedentes = calcular_pontos(certificado_data)
-        file = form.certificate.data
-        filename = secure_filename(file.filename)
 
-        # Se já existe um certificado para essa qualificação, acumule as horas excedentes
-        ultimo_certificado = Certificado.query.filter_by(usuario_id=usuario_id, qualificacao=form.qualificacao.data, aprovado=True).order_by(Certificado.timestamp.desc()).first()
-        if ultimo_certificado and ultimo_certificado.horas_excedentes:
-            horas_excedentes += ultimo_certificado.horas_excedentes
+        # Calcular pontos e horas para este envio específico
+        progressoes = calcular_pontos_total(usuario_id, certificados=[certificado_data])
+        pontos = progressoes[form.qualificacao.data]['pontos']
+        horas_excedentes = progressoes[form.qualificacao.data]['horas_excedentes']
 
-        upload_folder = app.config['UPLOAD_FOLDER']
-        if not os.path.exists(upload_folder):
-            os.makedirs(upload_folder)
-
-        file.save(os.path.join(upload_folder, filename))
-
+        # Criar um novo certificado (nova linha no banco)
         protocolo = generate_protocol(usuario_id)
 
         novo_certificado = Certificado(
@@ -87,15 +80,19 @@ def upload():
             ano_conclusao=form.ano_conclusao.data,
             ato_normativo=form.ato_normativo.data,
             tempo=form.tempo.data,
-            filename=filename,
+            filename=secure_filename(form.certificate.data.filename),
             usuario_id=usuario_id
         )
+
         db.session.add(novo_certificado)
         db.session.commit()
 
-        flash('Certificado enviado com sucesso! Aguardando aprovação.')
+        flash('Certificado enviado com sucesso! Aguardando aprovação.', 'success')
         return redirect(url_for('certificados'))
+
     return render_template('upload.html', form=form)
+
+
 
 
 @app.route('/certificados')
@@ -223,41 +220,43 @@ def deletar_usuario(id):
 @login_required
 def cursos():
     usuario_id = session.get('usuario_logado')
-    cursos_excedentes = calcular_pontos_cursos_aprovados(usuario_id)
+
+    # Chamada da função com persistência no banco
+    progressoes = calcular_pontos_total(usuario_id, persist=True)
 
     cursos_list = [
         {
             'nome': nome,
             'pontos': data['pontos'],
             'horas_excedentes': data['horas_excedentes']
-        } for nome, data in cursos_excedentes.items()
+        } for nome, data in progressoes.items()
     ]
 
     return render_template('cursos.html', cursos=cursos_list)
+
+
 
 
 @app.route('/aprovar/<int:certificado_id>', methods=['POST'])
 @requires_admin
 def aprovar_certificado(certificado_id):
     certificado = db.session.get(Certificado, certificado_id)
-    if certificado:
-        if not certificado.aprovado:
-            certificado.aprovado = True
-            usuario = db.session.get(Usuario, certificado.usuario_id)
-            if usuario:
-                usuario.pontuacao = (usuario.pontuacao or 0) + (certificado.pontos or 0)
-                db.session.add(usuario)
-            try:
-                db.session.commit()
-                flash('Certificado aprovado e pontos adicionados ao usuário!')
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Ocorreu um erro ao tentar aprovar o certificado: {str(e)}')
-        else:
-            flash('Este certificado já foi aprovado anteriormente e os pontos já foram adicionados.')
+    if certificado and not certificado.aprovado:
+        certificado.aprovado = True
+
+        try:
+            # Sincronizar pontos no banco após aprovação
+            calcular_pontos_total(certificado.usuario_id, persist=True)
+            db.session.commit()
+            flash('Certificado aprovado e pontos sincronizados!')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao aprovar certificado: {str(e)}')
     else:
-        flash('Certificado não encontrado ou você não tem permissão para aprová-lo.')
+        flash('Certificado já aprovado ou não encontrado.')
     return redirect(url_for('certificados'))
+
+
 
 @app.route('/recusar_certificado/<int:certificado_id>', methods=['POST'])
 @requires_admin
@@ -303,7 +302,9 @@ def api_get_mensagens():
 def progressoes():
     usuarios = Usuario.query.filter(Usuario.role != 'admin').all()
     usuario_id = int(request.form.get('usuario') or session.get('usuario_logado'))
-    progressoes = calcular_pontos_cursos_aprovados(usuario_id)
+
+    # Chamada da nova função consolidada
+    progressoes = calcular_pontos_total(usuario_id)
     errors = {}
 
     if request.method == 'POST':
@@ -348,8 +349,8 @@ def progressoes():
                 db.session.commit()
                 flash(f"Pontos da qualificação '{qualificacao}' atualizados com sucesso!", "success")
 
-    # Sempre recalcule o progresso atualizado
-    progressoes = calcular_pontos_cursos_aprovados(usuario_id)
+    # Recalcular progresso atualizado
+    progressoes = calcular_pontos_total(usuario_id)
 
     return render_template(
         'progressoes.html',
