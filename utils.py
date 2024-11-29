@@ -34,90 +34,104 @@ def parse_date(date_string):
     except (ValueError, TypeError):
         return None
 
-def calcular_pontos(certificado_data):
+def calcular_pontos_total(usuario_id, certificados=None, persist=False):
     """
-    Calcula os pontos e horas excedentes com base na qualificação e carga horária.
-    Retorna os pontos calculados e as horas excedentes para salvar no banco.
+    Calcula os pontos totais, progressões e horas excedentes para um usuário.
+    Pode persistir os valores no banco de dados, se solicitado.
     """
-    qualificacao = certificado_data['qualificacao']
-    horas = certificado_data.get('horas', 0)  # Define 0 se horas for None
-    tempo = certificado_data.get('tempo', 0)
-    pontos = 0
-    horas_excedentes = 0
+    if certificados is None:
+        # Se os certificados não forem fornecidos, busca os certificados aprovados no banco de dados
+        certificados = Certificado.query.filter_by(usuario_id=usuario_id, aprovado=True).all()
 
-    # Calcula os pontos e horas excedentes com base na qualificação
-    if qualificacao == 'Cursos, seminários, congressos e oficinas realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
-        pontos = (horas // 20) * 2
-        horas_excedentes = horas % 20
-    elif qualificacao == 'Cursos de atualização realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
-        if horas >= 40:
-            pontos = 5
-            horas_excedentes = horas - 40
-    elif qualificacao == 'Cursos de aperfeiçoamento realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
-        if horas >= 180:
-            pontos = 10
-            horas_excedentes = horas - 180
-    elif qualificacao == 'Cursos de graduação e especialização realizados em instituição pública ou privada, reconhecida pelo MEC.':
-        if horas >= 360:
-            pontos = 20
-            horas_excedentes = horas - 360
-    elif qualificacao == 'Mestrado, doutorado e pós-doutorado realizados em instituição pública ou privada, reconhecida pelo MEC.':
-        pontos = 30
-        horas_excedentes = 0
-    elif qualificacao == 'Instrutoria ou Coordenação de cursos promovidos pelo Município do Recife.':
-        if horas >= 8:
-            pontos = (horas // 8) * 2
-            if pontos > MAX_PONTOS_PERIODO[qualificacao]:  # Limite máximo
-                pontos = MAX_PONTOS_PERIODO[qualificacao]
-            horas_excedentes = horas % 8
-        else:
-            horas_excedentes = horas  # Armazena horas menores que 8 diretamente como horas excedentes
-
-    elif qualificacao == 'Participação em grupos, equipes, comissões e projetos especiais, no âmbito do Município do Recife, formalizados por ato oficial.':
-        pontos = 5
-    elif qualificacao == 'Exercício de cargos comissionados e funções gratificadas, ocupados, exclusivamente, no âmbito do Poder Executivo Municipal.':
-        if tempo >= 6:
-            pontos = (tempo // 6) * 10
-            if pontos > MAX_PONTOS_PERIODO[qualificacao]:  # Limite máximo
-                pontos = MAX_PONTOS_PERIODO[qualificacao]
-        horas_excedentes = 0
-
-    return pontos, horas_excedentes
-
-def calcular_pontos_cursos_aprovados(usuario_id):
-    certificados_aprovados = Certificado.query.filter_by(usuario_id=usuario_id, aprovado=True).all()
     progressoes = {qualificacao: {'pontos': 0, 'progressao': 0, 'horas_excedentes': 0} for qualificacao in QUALIFICACOES}
 
-    for certificado in certificados_aprovados:
-        qualificacao = certificado.qualificacao
+    for certificado in certificados:
+        if isinstance(certificado, dict):
+            qualificacao = certificado.get('qualificacao', '')
+            horas = certificado.get('horas', 0)
+            tempo = certificado.get('tempo', 0)
+            progressao = 0
+        else:
+            qualificacao = certificado.qualificacao
+            horas = certificado.carga_horaria or 0
+            tempo = certificado.tempo or 0
+            progressao = certificado.progressao or 0
 
-        progressoes[qualificacao]['progressao'] += certificado.progressao
-        progressoes[qualificacao]['pontos'] += certificado.pontos
-        progressoes[qualificacao]['horas_excedentes'] += certificado.horas_excedentes
-
-        # Calcular pontos adicionais a partir das horas excedentes
         if qualificacao == 'Cursos, seminários, congressos e oficinas realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
-            while progressoes[qualificacao]['horas_excedentes'] >= 20:
-                progressoes[qualificacao]['horas_excedentes'] -= 20
-                progressoes[qualificacao]['pontos'] += 2
+            progressoes[qualificacao]['pontos'] += (horas // 20) * 2
+            progressoes[qualificacao]['horas_excedentes'] += horas % 20
+
         elif qualificacao == 'Cursos de atualização realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
-            if progressoes[qualificacao]['horas_excedentes'] >= 40:
-                progressoes[qualificacao]['horas_excedentes'] -= 40
-                progressoes[qualificacao]['pontos'] += 5
+            progressoes[qualificacao]['pontos'] += 5 if horas >= 40 else 0
+            progressoes[qualificacao]['horas_excedentes'] += max(horas - 40, 0)
+
         elif qualificacao == 'Cursos de aperfeiçoamento realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
-            if progressoes[qualificacao]['horas_excedentes'] >= 180:
-                progressoes[qualificacao]['horas_excedentes'] -= 180
-                progressoes[qualificacao]['pontos'] += 10
+            progressoes[qualificacao]['pontos'] += 10 if horas >= 180 else 0
+            progressoes[qualificacao]['horas_excedentes'] += max(horas - 180, 0)
+
         elif qualificacao == 'Cursos de graduação e especialização realizados em instituição pública ou privada, reconhecida pelo MEC.':
-            if progressoes[qualificacao]['horas_excedentes'] >= 360:
-                progressoes[qualificacao]['horas_excedentes'] -= 360
-                progressoes[qualificacao]['pontos'] += 20
+            progressoes[qualificacao]['pontos'] += 20 if horas >= 360 else 0
+            progressoes[qualificacao]['horas_excedentes'] += max(horas - 360, 0)
+
+        elif qualificacao == 'Mestrado, doutorado e pós-doutorado realizados em instituição pública ou privada, reconhecida pelo MEC.':
+            progressoes[qualificacao]['pontos'] += 30
+
         elif qualificacao == 'Instrutoria ou Coordenação de cursos promovidos pelo Município do Recife.':
-            while progressoes[qualificacao]['horas_excedentes'] >= 8:
-                progressoes[qualificacao]['horas_excedentes'] -= 8
-                progressoes[qualificacao]['pontos'] += 2
+            progressoes[qualificacao]['pontos'] += (horas // 8) * 2
+            progressoes[qualificacao]['horas_excedentes'] += horas % 8
+
+        elif qualificacao == 'Participação em grupos, equipes, comissões e projetos especiais, no âmbito do Município do Recife, formalizados por ato oficial.':
+            progressoes[qualificacao]['pontos'] += 5
+
+        elif qualificacao == 'Exercício de cargos comissionados e funções gratificadas, ocupados, exclusivamente, no âmbito do Poder Executivo Municipal.':
+            progressoes[qualificacao]['pontos'] += (tempo // 6) * 10 if tempo >= 6 else 0
+
+        progressoes[qualificacao]['progressao'] += progressao
+
+    for qualificacao, dados in progressoes.items():
+        horas_excedentes = dados['horas_excedentes']
+        pontos_por_hora = 0
+        limite_horas = 0
+
+        if qualificacao == 'Cursos, seminários, congressos e oficinas realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
+            pontos_por_hora = 2
+            limite_horas = 20
+        elif qualificacao == 'Cursos de atualização realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
+            pontos_por_hora = 5
+            limite_horas = 40
+        elif qualificacao == 'Cursos de aperfeiçoamento realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
+            pontos_por_hora = 10
+            limite_horas = 180
+        elif qualificacao == 'Cursos de graduação e especialização realizados em instituição pública ou privada, reconhecida pelo MEC.':
+            pontos_por_hora = 20
+            limite_horas = 360
+        elif qualificacao == 'Instrutoria ou Coordenação de cursos promovidos pelo Município do Recife.':
+            pontos_por_hora = 2
+            limite_horas = 8
+
+        while horas_excedentes >= limite_horas and limite_horas > 0:
+            dados['pontos'] += pontos_por_hora
+            horas_excedentes -= limite_horas
+
+        dados['horas_excedentes'] = horas_excedentes
+
+        if persist:
+            # Atualizar no banco de dados os certificados aprovados
+            certificados_qualificacao = Certificado.query.filter_by(
+                usuario_id=usuario_id, aprovado=True, qualificacao=qualificacao
+            ).all()
+
+            for certificado in certificados_qualificacao:
+                certificado.pontos = dados['pontos']
+                certificado.horas_excedentes = dados['horas_excedentes']
+                db.session.add(certificado)
+
+    if persist:
+        db.session.commit()
 
     return progressoes
+
+
 
 
 def hash_password(password):
