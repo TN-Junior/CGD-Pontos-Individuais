@@ -221,7 +221,7 @@ def deletar_usuario(id):
 def cursos():
     usuario_id = session.get('usuario_logado')
 
-    # Chamada da função com persistência no banco
+    # Recalcular pontos com persistência no banco
     progressoes = calcular_pontos_total(usuario_id, persist=True)
 
     cursos_list = [
@@ -233,6 +233,7 @@ def cursos():
     ]
 
     return render_template('cursos.html', cursos=cursos_list)
+
 
 
 
@@ -303,37 +304,34 @@ def progressoes():
     usuarios = Usuario.query.filter(Usuario.role != 'admin').all()
     usuario_id = int(request.form.get('usuario') or session.get('usuario_logado'))
 
-    # Chamada da nova função consolidada
-    progressoes = calcular_pontos_total(usuario_id)
-    errors = {}
+    progressoes = calcular_pontos_total(usuario_id)  # Recalcular antes de renderizar
+    errors = {}  # Inicializar o dicionário de erros
 
     if request.method == 'POST':
-        for i, (qualificacao, dados) in enumerate(progressoes.items()):
-            adicionar_key = f'adicionar_{i + 1}'
+        for qualificacao, dados in progressoes.items():
+            adicionar_key = f"adicionar_{qualificacao.replace(' ', '_')}"
             if adicionar_key in request.form:
                 try:
                     progressao_valor = int(request.form.get(adicionar_key, '0'))
                 except ValueError:
-                    flash("Valor inválido para progressão.", "danger")
+                    errors[qualificacao] = "Valor inválido para progressão."
                     continue
 
-                # Verifica se o valor da progressão é maior que 0 antes de continuar
                 if progressao_valor <= 0:
-                    flash(f"Erro: Valor de progressão deve ser maior que 0 para '{qualificacao}'.", "danger")
+                    errors[qualificacao] = "Erro: Valor de progressão deve ser maior que 0."
                     continue
 
                 pontos_disponiveis = progressoes[qualificacao]['pontos']
 
                 if progressao_valor > pontos_disponiveis:
-                    flash(f"Erro: Você tentou usar mais pontos do que estão disponíveis para '{qualificacao}'.", "danger")
+                    errors[qualificacao] = "Erro: Você tentou usar mais pontos do que estão disponíveis."
                     continue
 
-                # Atualizar os certificados aprovados
-                certificados_aprovados_qualificacao = Certificado.query.filter_by(
+                certificados = Certificado.query.filter_by(
                     usuario_id=usuario_id, aprovado=True, qualificacao=qualificacao
                 ).all()
 
-                for certificado in certificados_aprovados_qualificacao:
+                for certificado in certificados:
                     if progressao_valor <= 0:
                         break
 
@@ -346,10 +344,14 @@ def progressoes():
                         progressao_valor -= restante
                         db.session.add(certificado)
 
-                db.session.commit()
-                flash(f"Pontos da qualificação '{qualificacao}' atualizados com sucesso!", "success")
+                try:
+                    db.session.commit()
+                    flash(f"Pontos atualizados com sucesso para '{qualificacao}'!", "success")
+                except Exception as e:
+                    db.session.rollback()
+                    flash(f"Erro ao salvar no banco de dados: {str(e)}")
 
-    # Recalcular progresso atualizado
+    # Recalcular os valores após a alteração para refletir os dados atualizados
     progressoes = calcular_pontos_total(usuario_id)
 
     return render_template(
@@ -357,5 +359,5 @@ def progressoes():
         progressoes=progressoes,
         usuarios=usuarios,
         usuario_selecionado=usuario_id,
-        errors=errors
+        errors=errors  # Passar os erros ao template
     )

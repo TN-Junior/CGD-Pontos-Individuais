@@ -7,7 +7,7 @@ Cursos
 {% block content %}
 <div class="container content">
     <h1>Qualificações</h1>
-    <form>
+    <form method="post">
         <table class="table table-striped">
             <thead>
                 <tr>
@@ -21,10 +21,10 @@ Cursos
                 <tr>
                     <td>{{ curso.nome }}</td>
                     <td>
-                        <input type="text" class="form-control" value="{{ curso.pontos }}" readonly>
+                        <input type="text" class="form-control" name="pontos_{{ curso.nome | replace(' ', '_') }}" value="{{ curso.pontos }}" readonly>
                     </td>
                     <td>
-                        <input type="text" class="form-control" value="{{ curso.horas_excedentes }}" readonly>
+                        <input type="text" class="form-control" name="horas_{{ curso.nome | replace(' ', '_') }}" value="{{ curso.horas_excedentes }}" readonly>
                     </td>
                 </tr>
                 {% endfor %}
