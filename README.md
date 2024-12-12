@@ -11,7 +11,7 @@ The Certification Management System is a web application designed to manage user
 - ![SQLAlchemy](https://img.shields.io/badge/-SQLAlchemy-5A9BD5?logo=data:image/png;base64,...)<!-- [SQLAlchemy](https://www.sqlalchemy.org/) - SQL toolkit and Object-Relational Mapping (ORM) library.-->
 - ![MySQL](https://img.shields.io/badge/-MySQL-4479A1?logo=mysql&logoColor=white&style=for-the-badge)<!-- [MySQL](https://www.mysql.com/)-->
 - ![JWT](https://img.shields.io/badge/-JWT-000?logo=jsonwebtokens&logoColor=white&style=for-the-badge)<!-- [JWT (JSON Web Tokens)](https://jwt.io/)-->
-- ![Gunicorn](https://img.shields.io/badge/-Gunicorn-499848?logo=gunicorn&logoColor=white&style=for-the-badge)<!-- [Gunicorn](https://gunicorn.org/) - Python WSGI HTTP Server.-->
+<!--- ![Gunicorn](https://img.shields.io/badge/-Gunicorn-499848?logo=gunicorn&logoColor=white&style=for-the-badge) [Gunicorn](https://gunicorn.org/) - Python WSGI HTTP Server.-->
 
 ### Frontend
 - ![Bootstrap](https://img.shields.io/badge/-Bootstrap-563D7C?logo=bootstrap&logoColor=white&style=for-the-badge)<!-- [Bootstrap](https://getbootstrap.com/) - Frontend framework for responsive design. -->
