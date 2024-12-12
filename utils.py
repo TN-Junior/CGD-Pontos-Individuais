@@ -40,7 +40,6 @@ def calcular_pontos_total(usuario_id, certificados=None, persist=False):
     Pode persistir os valores no banco de dados, se solicitado.
     """
     if certificados is None:
-        # Se os certificados não forem fornecidos, busca os certificados aprovados no banco de dados
         certificados = Certificado.query.filter_by(usuario_id=usuario_id, aprovado=True).all()
 
     progressoes = {qualificacao: {'pontos': 0, 'progressao': 0, 'horas_excedentes': 0} for qualificacao in QUALIFICACOES}
@@ -58,7 +57,7 @@ def calcular_pontos_total(usuario_id, certificados=None, persist=False):
             progressao = certificado.progressao or 0
 
         if qualificacao in progressoes:
-            # Adiciona pontos baseados na qualificação
+            # Adiciona pontos e calcula horas excedentes para cada qualificação
             if qualificacao == 'Cursos, seminários, congressos e oficinas realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
                 progressoes[qualificacao]['pontos'] += (horas // 20) * 2
                 progressoes[qualificacao]['horas_excedentes'] += horas % 20
@@ -88,9 +87,21 @@ def calcular_pontos_total(usuario_id, certificados=None, persist=False):
             elif qualificacao == 'Exercício de cargos comissionados e funções gratificadas, ocupados, exclusivamente, no âmbito do Poder Executivo Municipal.':
                 progressoes[qualificacao]['pontos'] += (tempo // 6) * 10 if tempo >= 6 else 0
 
-            # Reduz os pontos já utilizados em progressões
+            # Desconta os pontos já utilizados em progressões
             progressoes[qualificacao]['progressao'] += progressao
-            progressoes[qualificacao]['pontos'] -= progressao  # Desconta os pontos usados em progressão
+            progressoes[qualificacao]['pontos'] -= progressao
+
+    # Conversão de horas excedentes em pontos adicionais
+    for qualificacao, dados in progressoes.items():
+        if qualificacao == 'Cursos, seminários, congressos e oficinas realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
+            while dados['horas_excedentes'] >= 20:
+                dados['pontos'] += 2
+                dados['horas_excedentes'] -= 20
+
+        elif qualificacao == 'Instrutoria ou Coordenação de cursos promovidos pelo Município do Recife.':
+            while dados['horas_excedentes'] >= 8:
+                dados['pontos'] += 2
+                dados['horas_excedentes'] -= 8
 
     # Persistência no banco de dados, se necessário
     if persist:
@@ -100,13 +111,14 @@ def calcular_pontos_total(usuario_id, certificados=None, persist=False):
             ).all()
 
             for certificado in certificados_qualificacao:
-                certificado.pontos = max(dados['pontos'], 0)  # Atualiza os pontos no banco
+                certificado.pontos = max(dados['pontos'], 0)
                 certificado.horas_excedentes = dados['horas_excedentes']
                 db.session.add(certificado)
 
         db.session.commit()
 
     return progressoes
+
 
 
 
