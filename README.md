@@ -35,8 +35,8 @@ psycopg2 or another compatible database driver
 
 1. Clone the repository:
 ``` bash
-git clone https://github.com/
-cd
+git clone https://github.com/...
+cd project name
 ```
 2. Create a virtual environment and activate it:
 ``` bash
