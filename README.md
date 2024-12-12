@@ -5,11 +5,23 @@
 The Certification Management System is a web application designed to manage user certifications, track qualification progressions, and calculate points based on various qualifications. The system includes user authentication, an admin panel, and the ability to upload and approve certificates.
 
 ## Technologies Used
+
+### Backend
 - ![Flask](https://img.shields.io/badge/-Flask-000?logo=flask&logoColor=white&style=for-the-badge)<!-- [Flask](https://flask.palletsprojects.com/)-->
+- ![SQLAlchemy](https://img.shields.io/badge/-SQLAlchemy-5A9BD5?logo=data:image/png;base64,...)<!-- [SQLAlchemy](https://www.sqlalchemy.org/) - SQL toolkit and Object-Relational Mapping (ORM) library.-->
 - ![MySQL](https://img.shields.io/badge/-MySQL-4479A1?logo=mysql&logoColor=white&style=for-the-badge)<!-- [MySQL](https://www.mysql.com/)-->
-- ![Bootstrap](https://img.shields.io/badge/-Bootstrap-563D7C?logo=bootstrap&logoColor=white&style=for-the-badge)<!-- [Bootstrap](https://getbootstrap.com/)-->
 - ![JWT](https://img.shields.io/badge/-JWT-000?logo=jsonwebtokens&logoColor=white&style=for-the-badge)<!-- [JWT (JSON Web Tokens)](https://jwt.io/)-->
 - ![Dash](https://img.shields.io/badge/-Dash-00BFFF?logo=plotly&logoColor=white&style=for-the-badge) <!--[Dash](https://dash.plotly.com/) -->
+- ![Gunicorn](https://img.shields.io/badge/-Gunicorn-499848?logo=gunicorn&logoColor=white&style=for-the-badge)<!-- [Gunicorn](https://gunicorn.org/) - Python WSGI HTTP Server.-->
+
+### Frontend
+- ![Bootstrap](https://img.shields.io/badge/-Bootstrap-563D7C?logo=bootstrap&logoColor=white&style=for-the-badge)<!-- [Bootstrap](https://getbootstrap.com/) - Frontend framework for responsive design. -->
+- ![Flask](https://img.shields.io/badge/-Flask-000?logo=flask&logoColor=white&style=for-the-badge)<!-- [Flask](https://flask.palletsprojects.com/) - Python web framework used for backend APIs and server-side rendered frontend. -->
+- - ![Jinja2](https://img.shields.io/badge/-Jinja2-B41717?logo=data:image/png;base64,...)<!-- [Jinja2](https://jinja.palletsprojects.com/) - Templating engine for Flask to render dynamic HTML. -->
+
+### Database
+- ![MySQL](https://img.shields.io/badge/-MySQL-4479A1?logo=mysql&logoColor=white&style=for-the-badge)<!-- [MySQL](https://www.mysql.com/) - Relational database management system. -->
+
 
 ## Features
 
