@@ -310,6 +310,13 @@ def progressoes():
     progressoes = calcular_pontos_total(usuario_id)
     errors = {}
 
+    # Lista de qualificações prioritárias
+    qualificacoes_prioritarias = [
+        "Instrutoria ou Coordenação de cursos promovidos pelo Município do Recife.",
+        "Participação em grupos, equipes, comissões e projetos especiais, no âmbito do Município do Recife, formalizados por ato oficial.",
+        "Exercício de cargos comissionados e funções gratificadas, ocupados, exclusivamente, no âmbito do Poder Executivo Municipal."
+    ]
+
     if request.method == 'POST':
         # Identifica o botão de adição pressionado
         qualificacao_adicionar = request.form.get('botao_adicionar')
@@ -317,6 +324,15 @@ def progressoes():
         if qualificacao_adicionar:
             # Sanitiza o nome da qualificação
             qualificacao_adicionar = qualificacao_adicionar.replace('_', ' ')
+
+            # Verifica se há pontos disponíveis nas qualificações prioritárias
+            pontos_prioritarios_disponiveis = sum(
+                progressoes[qual]['pontos'] for qual in qualificacoes_prioritarias if qual in progressoes
+            )
+
+            if pontos_prioritarios_disponiveis > 0 and qualificacao_adicionar not in qualificacoes_prioritarias:
+                flash("Você precisa utilizar todos os pontos disponíveis das qualificações prioritárias antes de adicionar pontos em outras qualificações.", "danger")
+                return redirect(url_for('progressoes'))
 
             # Processa o valor de pontos enviados para a qualificação selecionada
             adicionar_key = f"adicionar_{qualificacao_adicionar.replace(' ', '_')}"
@@ -351,10 +367,10 @@ def progressoes():
                 certificado.progressao += restante
                 certificado.pontos -= restante
 
-                # Atualiza o valor restante de progressão
-                progressao_valor -= restante
+                progressoes[qualificacao_adicionar]['pontos'] -= restante
+                progressoes[qualificacao_adicionar]['progressao'] += restante
 
-                # Marca o certificado como atualizado
+                progressao_valor -= restante
                 db.session.add(certificado)
 
             try:
@@ -374,4 +390,5 @@ def progressoes():
         usuario_selecionado=usuario_id,
         errors=errors
     )
+
 
