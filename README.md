@@ -107,14 +107,14 @@ GET /api/mensagens: Retrieve messages sent to the administrator (Admin only).
 The config.py file contains a list of supported qualifications and their point limits. Modify these as needed:
 ```bash
 QUALIFICACOES = [
-    "Courses, seminars, and workshops promoted by the Recife Municipality.",
-    "Updating courses promoted by the Recife Municipality.",
-    "Improvement courses promoted by the Recife Municipality.",
-    "Graduation and specialization courses recognized by MEC.",
-    "Master's, doctorate, and post-doctorate degrees recognized by MEC.",
-    "Instruction or coordination of courses promoted by the Recife Municipality.",
-    "Participation in groups, teams, commissions, and special projects.",
-    "Exercise of commissioned positions within the Recife Executive Power."
+    "Cursos, seminários, congressos e oficinas realizados, promovidos, articulados ou admitidos pelo Município do Recife.",
+    "Cursos de atualização realizados, promovidos, articulados ou admitidos pelo Município do Recife.",
+    "Cursos de aperfeiçoamento realizados, promovidos, articulados ou admitidos pelo Município do Recife.",
+    "Cursos de graduação e especialização realizados em instituição pública ou privada, reconhecida pelo MEC.",
+    "Mestrado, doutorado e pós-doutorado realizados em instituição pública ou privada, reconhecida pelo MEC.",
+    "Instrutoria ou Coordenação de cursos promovidos pelo Município do Recife.",
+    "Participação em grupos, equipes, comissões e projetos especiais, no âmbito do Município do Recife, formalizados por ato oficial.",
+    "Exercício de cargos comissionados e funções gratificadas, ocupados, exclusivamente, no âmbito do Poder Executivo Municipal."
 ]
 ```
 
