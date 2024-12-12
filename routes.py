@@ -80,6 +80,7 @@ def upload():
             ano_conclusao=form.ano_conclusao.data,
             ato_normativo=form.ato_normativo.data,
             tempo=form.tempo.data,
+            descricao=form.descricao.data,
             filename=secure_filename(form.certificate.data.filename),
             usuario_id=usuario_id
         )
