@@ -37,6 +37,9 @@
                 {% if certificado.tempo %}
                 <p><strong>Tempo (anos):</strong> {{ certificado.tempo }}</p>
                 {% endif %}
+                {% if certificado.descricao %}
+                <p><strong>Descrição:</strong> {{ certificado.descricao }}</p>
+                {% endif %}
                 <p>
                     <strong>Arquivo:</strong>
                     <a href="{{ url_for('uploaded_file', filename=certificado.filename) }}" target="_blank" class="btn btn-info btn-sm">Download</a>
