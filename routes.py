@@ -300,57 +300,88 @@ def api_get_mensagens():
 @app.route('/progressoes', methods=['GET', 'POST'])
 @login_required
 def progressoes():
+    """
+    Rota para gerenciar progresso de qualificações e adicionar pontos.
+    """
     usuarios = Usuario.query.filter(Usuario.role != 'admin').all()
     usuario_id = int(request.form.get('usuario') or session.get('usuario_logado'))
 
-    # Chamada da nova função consolidada
+    # Calcula o estado inicial das progressoes
     progressoes = calcular_pontos_total(usuario_id)
     errors = {}
 
+    # Lista de qualificações prioritárias
+    qualificacoes_prioritarias = [
+        "Instrutoria ou Coordenação de cursos promovidos pelo Município do Recife.",
+        "Participação em grupos, equipes, comissões e projetos especiais, no âmbito do Município do Recife, formalizados por ato oficial.",
+        "Exercício de cargos comissionados e funções gratificadas, ocupados, exclusivamente, no âmbito do Poder Executivo Municipal."
+    ]
+
     if request.method == 'POST':
-        for i, (qualificacao, dados) in enumerate(progressoes.items()):
-            adicionar_key = f'adicionar_{i + 1}'
-            if adicionar_key in request.form:
-                try:
-                    progressao_valor = int(request.form.get(adicionar_key, '0'))
-                except ValueError:
-                    flash("Valor inválido para progressão.", "danger")
-                    continue
+        # Identifica o botão de adição pressionado
+        qualificacao_adicionar = request.form.get('botao_adicionar')
 
-                # Verifica se o valor da progressão é maior que 0 antes de continuar
+        if qualificacao_adicionar:
+            # Sanitiza o nome da qualificação
+            qualificacao_adicionar = qualificacao_adicionar.replace('_', ' ')
+
+            # Verifica se há pontos disponíveis nas qualificações prioritárias
+            pontos_prioritarios_disponiveis = sum(
+                progressoes[qual]['pontos'] for qual in qualificacoes_prioritarias if qual in progressoes
+            )
+
+            if pontos_prioritarios_disponiveis > 0 and qualificacao_adicionar not in qualificacoes_prioritarias:
+                flash("Você precisa utilizar todos os pontos disponíveis das qualificações prioritárias antes de adicionar pontos em outras qualificações.", "danger")
+                return redirect(url_for('progressoes'))
+
+            # Processa o valor de pontos enviados para a qualificação selecionada
+            adicionar_key = f"adicionar_{qualificacao_adicionar.replace(' ', '_')}"
+            try:
+                progressao_valor = int(request.form.get(adicionar_key, '0'))
+            except ValueError:
+                flash(f"Valor inválido para progressão na qualificação '{qualificacao_adicionar}'.", "danger")
+                return redirect(url_for('progressoes'))
+
+            if progressao_valor <= 0:
+                flash(f"Erro: O valor da progressão deve ser maior que 0 para '{qualificacao_adicionar}'.", "danger")
+                return redirect(url_for('progressoes'))
+
+            pontos_disponiveis = progressoes[qualificacao_adicionar]['pontos']
+
+            if progressao_valor > pontos_disponiveis:
+                flash(f"Erro: Você tentou usar mais pontos do que estão disponíveis para '{qualificacao_adicionar}'.", "danger")
+                return redirect(url_for('progressoes'))
+
+            # Atualiza os pontos nos certificados
+            certificados_aprovados = Certificado.query.filter_by(
+                usuario_id=usuario_id, aprovado=True, qualificacao=qualificacao_adicionar
+            ).all()
+
+            for certificado in certificados_aprovados:
+                # Continua processando até que progressao_valor seja completamente consumido
                 if progressao_valor <= 0:
-                    flash(f"Erro: Valor de progressão deve ser maior que 0 para '{qualificacao}'.", "danger")
-                    continue
+                    break
 
-                pontos_disponiveis = progressoes[qualificacao]['pontos']
+                # Reduz os pontos do certificado proporcionalmente ao necessário
+                restante = min(progressao_valor, certificado.pontos)
+                certificado.progressao += restante
+                certificado.pontos -= restante
 
-                if progressao_valor > pontos_disponiveis:
-                    flash(f"Erro: Você tentou usar mais pontos do que estão disponíveis para '{qualificacao}'.", "danger")
-                    continue
+                progressoes[qualificacao_adicionar]['pontos'] -= restante
+                progressoes[qualificacao_adicionar]['progressao'] += restante
 
-                # Atualizar os certificados aprovados
-                certificados_aprovados_qualificacao = Certificado.query.filter_by(
-                    usuario_id=usuario_id, aprovado=True, qualificacao=qualificacao
-                ).all()
+                progressao_valor -= restante
+                db.session.add(certificado)
 
-                for certificado in certificados_aprovados_qualificacao:
-                    if progressao_valor <= 0:
-                        break
-
-                    if certificado.pontos > 0:
-                        restante = min(progressao_valor, certificado.pontos)
-                        certificado.progressao += restante
-                        certificado.pontos -= restante
-                        progressoes[qualificacao]['pontos'] -= restante
-                        progressoes[qualificacao]['progressao'] += restante
-                        progressao_valor -= restante
-                        db.session.add(certificado)
-
+            try:
                 db.session.commit()
-                flash(f"Pontos da qualificação '{qualificacao}' atualizados com sucesso!", "success")
+                flash(f"Pontos da qualificação '{qualificacao_adicionar}' transferidos para progressão com sucesso!", "success")
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Erro ao salvar progressões no banco de dados: {str(e)}", "danger")
 
-    # Recalcular progresso atualizado
-    progressoes = calcular_pontos_total(usuario_id)
+        # Recalcula as progressoes para refletir as atualizações
+        progressoes = calcular_pontos_total(usuario_id)
 
     return render_template(
         'progressoes.html',
@@ -359,3 +390,5 @@ def progressoes():
         usuario_selecionado=usuario_id,
         errors=errors
     )
+
+
