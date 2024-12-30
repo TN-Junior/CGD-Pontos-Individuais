@@ -6,6 +6,7 @@
     <title>{% block title %}CertiFlow{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.css') }}">
     <style>
+        /* Navbar personalizada */
         .navbar-custom {
             background-color: #0f3057;
             border-color: #0f3057;
@@ -30,6 +31,18 @@
         .navbar-custom .navbar-toggler-icon {
             background-color: #CCC;
         }
+
+        /* Estilo da logo */
+        .navbar-brand img {
+            height: 40px; /* Ajusta a altura */
+            max-width: 100px; /* Define largura máxima */
+            margin-right: 10px; /* Espaçamento da logo para o texto ao lado */
+            border-radius: 5px; /* Bordas arredondadas */
+            object-fit: contain; /* Mantém proporção da imagem */
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2); /* Sombra para destacar a logo */
+        }
+
+        /* Footer */
         .footer {
             background-color: #0f3057;
             color: #FFF;
@@ -39,20 +52,24 @@
             width: 100%;
             bottom: 0;
         }
+
+        /* Espaçamento no conteúdo */
         .content {
             margin-top: 70px; /* Espaço para o navbar */
             overflow: auto; /* Adiciona rolagem à área de conteúdo */
-            padding-bottom: 60px; /* Espaço para a footer */
+            padding-bottom: 60px; /* Espaço para o footer */
         }
+
+        /* Navbar alinhamento */
         .navbar-nav .profile {
-            margin-left: auto; /* Use 'auto' instead of a fixed margin */
+            margin-left: auto; /* Use 'auto' para alinhar corretamente */
         }
     </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-custom">
         <a class="navbar-brand" href="#">
-            <img src="{{ url_for('static', filename='Logo_Quadrada_PCR.jpg') }}" alt="CertiFicados Logo" style="height: 40px;">
+            <img src="{{ url_for('static', filename='Logo_Quadrada_PCR.jpg') }}" alt="CertiFicados Logo">
         </a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -87,14 +104,13 @@
                             {% if session['usuario_role'] == 'admin' %}
                                 <a class="dropdown-item" href="/certificados">Painel</a>
                                 <a class="dropdown-item" href="/usuarios">Usuários</a>
-                                <a class="dropdown-item" href="/progressoes">Progressão</a> <!-- Adicione este link -->
+                                <a class="dropdown-item" href="/progressoes">Progressão</a>
                             {% else %}
                                 <a class="dropdown-item" href="/cursos">Painel</a>
                                 <a class="dropdown-item" href="/certificados_pendentes">Certificados Pendentes</a>
                                 <a class="dropdown-item" href="/certificados_aprovados">Certificados Aprovados</a>
                                 <a class="dropdown-item" href="/upload">Upload</a>
                             {% endif %}
-                            <!-- <a class="dropdown-item" href="#">Mensagens</a> -->
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item" href="{{ url_for('logout') }}">Sair</a>
                         </div>
