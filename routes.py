@@ -5,6 +5,7 @@ from utils import requires_admin, login_required, calcular_pontos_total, generat
 from forms import UploadForm
 import os
 from werkzeug.utils import secure_filename
+from fpdf import FPDF
 
 
 
@@ -393,3 +394,78 @@ def progressoes():
     )
 
 
+@app.route('/gerar_relatorio_usuario', methods=['POST'])
+@login_required
+def gerar_relatorio_usuario():
+    usuario_id = request.form.get('usuario_id')
+    usuario = db.session.get(Usuario, usuario_id)
+
+    if not usuario:
+        flash("Usuário não encontrado.", "danger")
+        return redirect(url_for('progressoes'))
+
+    # Recuperar as progressoes do usuário
+    progressoes = calcular_pontos_total(usuario.id)
+
+    # Criar o PDF
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+    pdf.set_font('Arial', size=12)
+
+    # Cabeçalho
+    pdf.set_font('Arial', 'B', 16)
+    pdf.cell(0, 10, txt="Relatório de Pontos e Progressões", ln=True, align='C')
+    pdf.ln(10)
+
+    # Dados do usuário
+    pdf.set_font('Arial', 'B', 12)
+    pdf.cell(0, 10, txt=f"Usuário: {usuario.nome} (Matrícula: {usuario.matricula})", ln=True)
+    pdf.ln(5)
+
+    # Tabela de progresso
+    pdf.set_font('Arial', 'B', 12)
+    pdf.cell(110, 10, txt="Qualificação", border=1, align='C')  # Ajuste da largura
+    pdf.cell(40, 10, txt="Pontos", border=1, align='C')
+    pdf.cell(40, 10, txt="Progressão", border=1, align='C')
+    pdf.ln()
+
+    pdf.set_font('Arial', size=10)
+
+    # Função para truncar texto com "..."
+    def truncate_text(text, max_width, pdf):
+        """
+        Trunca o texto para caber no espaço disponível e adiciona "..." se necessário.
+        """
+        if pdf.get_string_width(text) <= max_width:
+            return text
+        while pdf.get_string_width(text + "...") > max_width:
+            text = text[:-1]
+        return text + "..."
+
+    for qualificacao, dados in progressoes.items():
+        # Truncar o texto da qualificação se necessário
+        truncated_qualificacao = truncate_text(qualificacao, 100, pdf)  # Limite de largura = 100 unidades
+
+        # Salvar a posição inicial da linha
+        x = pdf.get_x()
+        y = pdf.get_y()
+
+        # Criar a célula para a qualificação truncada
+        pdf.cell(110, 10, txt=truncated_qualificacao, border=1, align='L')
+
+        # Células de pontos e progressão
+        pdf.cell(40, 10, txt=str(dados['pontos']), border=1, align='C')
+        pdf.cell(40, 10, txt=str(dados['progressao']), border=1, align='C')
+
+        # Avançar para a próxima linha
+        pdf.ln()
+
+    # Salvar o PDF
+    output_dir = os.path.join(app.root_path, 'static', 'reports')
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, f'relatorio_usuario_{usuario_id}.pdf')
+    pdf.output(output_path)
+
+    # Retornar o PDF para download
+    return send_from_directory(directory=output_dir, path=f'relatorio_usuario_{usuario_id}.pdf', as_attachment=True)
