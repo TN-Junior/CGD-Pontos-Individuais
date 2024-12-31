@@ -16,7 +16,7 @@ The Certification Management System is a web application designed to manage user
 ### Frontend
 - ![Bootstrap](https://img.shields.io/badge/-Bootstrap-563D7C?logo=bootstrap&logoColor=white&style=for-the-badge)<!-- [Bootstrap](https://getbootstrap.com/) - Frontend framework for responsive design. -->
 - ![Flask](https://img.shields.io/badge/-Flask-000?logo=flask&logoColor=white&style=for-the-badge)<!-- [Flask](https://flask.palletsprojects.com/) - Python web framework used for backend APIs and server-side rendered frontend. -->
-- - ![Jinja2](https://img.shields.io/badge/-Jinja2-B41717?logo=data:image/png;base64,...)<!-- [Jinja2](https://jinja.palletsprojects.com/) - Templating engine for Flask to render dynamic HTML. -->
+-  ![Jinja2](https://img.shields.io/badge/-Jinja2-B41717?logo=data:image/png;base64,...)<!-- [Jinja2](https://jinja.palletsprojects.com/) - Templating engine for Flask to render dynamic HTML. -->
 
 ### Database
 - ![MySQL](https://img.shields.io/badge/-MySQL-4479A1?logo=mysql&logoColor=white&style=for-the-badge)<!-- [MySQL](https://www.mysql.com/) - Relational database management system. -->
