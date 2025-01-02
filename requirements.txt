@@ -24,4 +24,5 @@ apscheduler==3.6.3
 WTForms==3.1.2
 Flask-Bcrypt==1.0.1
 pyscrypt==1.6.2
+fpdf==1.7.2
 
