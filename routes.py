@@ -51,7 +51,7 @@ def upload():
         periodo_de = form.periodo_de.data
         periodo_ate = form.periodo_ate.data
 
-        # Dados do certificado enviado
+
         certificado_data = {
             'qualificacao': form.qualificacao.data,
             'horas': form.horas.data,
@@ -61,12 +61,12 @@ def upload():
             'tempo': form.tempo.data,
         }
 
-        # Calcular pontos e horas para este envio específico
+
         progressoes = calcular_pontos_total(usuario_id, certificados=[certificado_data])
         pontos = progressoes[form.qualificacao.data]['pontos']
         horas_excedentes = progressoes[form.qualificacao.data]['horas_excedentes']
 
-        # Criar um novo certificado (nova linha no banco)
+
         protocolo = generate_protocol(usuario_id)
 
         novo_certificado = Certificado(
@@ -223,7 +223,7 @@ def deletar_usuario(id):
 def cursos():
     usuario_id = session.get('usuario_logado')
 
-    # Chamada da função com persistência no banco
+
     progressoes = calcular_pontos_total(usuario_id, persist=True)
 
     cursos_list = [
@@ -247,7 +247,7 @@ def aprovar_certificado(certificado_id):
         certificado.aprovado = True
 
         try:
-            # Sincronizar pontos no banco após aprovação
+
             calcular_pontos_total(certificado.usuario_id, persist=True)
             db.session.commit()
             flash('Certificado aprovado e pontos sincronizados!')
@@ -308,11 +308,11 @@ def progressoes():
     usuarios = Usuario.query.filter(Usuario.role != 'admin').all()
     usuario_id = int(request.form.get('usuario') or session.get('usuario_logado'))
 
-    # Calcula o estado inicial das progressoes
+
     progressoes = calcular_pontos_total(usuario_id)
     errors = {}
 
-    # Lista de qualificações prioritárias
+
     qualificacoes_prioritarias = [
         "Instrutoria ou Coordenação de cursos promovidos pelo Município do Recife.",
         "Participação em grupos, equipes, comissões e projetos especiais, no âmbito do Município do Recife, formalizados por ato oficial.",
@@ -320,14 +320,14 @@ def progressoes():
     ]
 
     if request.method == 'POST':
-        # Identifica o botão de adição pressionado
+
         qualificacao_adicionar = request.form.get('botao_adicionar')
 
         if qualificacao_adicionar:
-            # Sanitiza o nome da qualificação
+
             qualificacao_adicionar = qualificacao_adicionar.replace('_', ' ')
 
-            # Verifica se há pontos disponíveis nas qualificações prioritárias
+
             pontos_prioritarios_disponiveis = sum(
                 progressoes[qual]['pontos'] for qual in qualificacoes_prioritarias if qual in progressoes
             )
@@ -336,7 +336,7 @@ def progressoes():
                 flash("Você precisa utilizar todos os pontos disponíveis das qualificações prioritárias antes de adicionar pontos em outras qualificações.", "danger")
                 return redirect(url_for('progressoes'))
 
-            # Processa o valor de pontos enviados para a qualificação selecionada
+
             adicionar_key = f"adicionar_{qualificacao_adicionar.replace(' ', '_')}"
             try:
                 progressao_valor = int(request.form.get(adicionar_key, '0'))
@@ -354,17 +354,17 @@ def progressoes():
                 flash(f"Erro: Você tentou usar mais pontos do que estão disponíveis para '{qualificacao_adicionar}'.", "danger")
                 return redirect(url_for('progressoes'))
 
-            # Atualiza os pontos nos certificados
+
             certificados_aprovados = Certificado.query.filter_by(
                 usuario_id=usuario_id, aprovado=True, qualificacao=qualificacao_adicionar
             ).all()
 
             for certificado in certificados_aprovados:
-                # Continua processando até que progressao_valor seja completamente consumido
+
                 if progressao_valor <= 0:
                     break
 
-                # Reduz os pontos do certificado proporcionalmente ao necessário
+
                 restante = min(progressao_valor, certificado.pontos)
                 certificado.progressao += restante
                 certificado.pontos -= restante
@@ -382,7 +382,7 @@ def progressoes():
                 db.session.rollback()
                 flash(f"Erro ao salvar progressões no banco de dados: {str(e)}", "danger")
 
-        # Recalcula as progressoes para refletir as atualizações
+
         progressoes = calcular_pontos_total(usuario_id)
 
     return render_template(
@@ -404,26 +404,26 @@ def gerar_relatorio_usuario():
         flash("Usuário não encontrado.", "danger")
         return redirect(url_for('progressoes'))
 
-    # Recuperar as progressoes do usuário
+
     progressoes = calcular_pontos_total(usuario.id)
 
-    # Criar o PDF
+
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     pdf.set_font('Arial', size=12)
 
-    # Cabeçalho
+
     pdf.set_font('Arial', 'B', 16)
     pdf.cell(0, 10, txt="Relatório de Pontos e Progressões", ln=True, align='C')
     pdf.ln(10)
 
-    # Dados do usuário
+
     pdf.set_font('Arial', 'B', 12)
     pdf.cell(0, 10, txt=f"Usuário: {usuario.nome} (Matrícula: {usuario.matricula})", ln=True)
     pdf.ln(5)
 
-    # Tabela de progresso
+
     pdf.set_font('Arial', 'B', 12)
     pdf.cell(110, 10, txt="Qualificação", border=1, align='C')  # Ajuste da largura
     pdf.cell(40, 10, txt="Pontos", border=1, align='C')
