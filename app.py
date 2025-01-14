@@ -8,15 +8,15 @@ from apscheduler.schedulers.background import BackgroundScheduler
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Inicialização do SQLAlchemy e migrações
+
 db.init_app(app)
 migrate.init_app(app, db)
 
-# Configuração de fuso horário e agendador
+
 timezone = pytz.timezone('America/Recife')
 scheduler = BackgroundScheduler(timezone=timezone)
 
-# Importa as rotas e os modelos após inicializar app e db
+
 from routes import *
 from models import *
 
