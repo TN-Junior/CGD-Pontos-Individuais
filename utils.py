@@ -6,7 +6,7 @@ from datetime import datetime
 import pyscrypt, os
 from config import QUALIFICACOES, MAX_PONTOS_PERIODO
 
-# Funções utilitárias
+
 def requires_admin(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -57,7 +57,7 @@ def calcular_pontos_total(usuario_id, certificados=None, persist=False):
             progressao = certificado.progressao or 0
 
         if qualificacao in progressoes:
-            # Adiciona pontos e calcula horas excedentes para as qualificações especificadas
+
             if qualificacao == 'Cursos, seminários, congressos e oficinas realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
                 progressoes[qualificacao]['pontos'] += (horas // 20) * 2
                 progressoes[qualificacao]['horas_excedentes'] += horas % 20
@@ -84,11 +84,10 @@ def calcular_pontos_total(usuario_id, certificados=None, persist=False):
             elif qualificacao == 'Exercício de cargos comissionados e funções gratificadas, ocupados, exclusivamente, no âmbito do Poder Executivo Municipal.':
                 progressoes[qualificacao]['pontos'] += (tempo // 6) * 10 if tempo >= 6 else 0
 
-            # Desconta os pontos já utilizados em progressões
+
             progressoes[qualificacao]['progressao'] += progressao
             progressoes[qualificacao]['pontos'] -= progressao
 
-    # Conversão de horas excedentes em pontos adicionais apenas para qualificações específicas
     for qualificacao, dados in progressoes.items():
         if qualificacao == 'Cursos, seminários, congressos e oficinas realizados, promovidos, articulados ou admitidos pelo Município do Recife.':
             while dados['horas_excedentes'] >= 20:
@@ -100,7 +99,6 @@ def calcular_pontos_total(usuario_id, certificados=None, persist=False):
                 dados['pontos'] += 2
                 dados['horas_excedentes'] -= 8
 
-    # Persistência no banco de dados, se necessário
     if persist:
         for qualificacao, dados in progressoes.items():
             certificados_qualificacao = Certificado.query.filter_by(
