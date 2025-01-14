@@ -17,7 +17,7 @@ class Config:
     }
     SESSION_PERMANENT = False
 
-# Lista de qualificações
+
 QUALIFICACOES = [
     "Cursos, seminários, congressos e oficinas realizados, promovidos, articulados ou admitidos pelo Município do Recife.",
     "Cursos de atualização realizados, promovidos, articulados ou admitidos pelo Município do Recife.",
@@ -29,7 +29,7 @@ QUALIFICACOES = [
     "Exercício de cargos comissionados e funções gratificadas, ocupados, exclusivamente, no âmbito do Poder Executivo Municipal."
 ]
 
-# Constantes de limite de pontuação máxima
+
 MAX_PONTOS_PERIODO = {
     'Instrutoria ou Coordenação de cursos promovidos pelo Município do Recife.': 10,
     'Participação em grupos, equipes, comissões e projetos especiais, no âmbito do Município do Recife, formalizados por ato oficial.': 10,
